@@ -13,6 +13,10 @@ jobs:
   publish:
     runs-on: ubuntu-latest
 
+    # Coloca o secret em env pra usar no if de forma estável
+    env:
+      PERSONAL_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,7 +38,6 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: true
 
-      # OIDC / Trusted Publishing (sem token)
       - name: Publish to npm (OIDC)
         run: npm publish --access public --provenance
 
@@ -64,6 +67,7 @@ jobs:
           allow_override: true
 
       - name: Update WPPConnect Site
+        if: env.PERSONAL_TOKEN != ''
         run: gh workflow run update-blog.yml --repo wppconnect-team/wppconnect-team.github.io
         continue-on-error: true
         env:
