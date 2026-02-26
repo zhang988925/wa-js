@@ -13,7 +13,6 @@ jobs:
   publish:
     runs-on: ubuntu-latest
 
-    # Coloca o secret em env pra usar no if de forma estável
     env:
       PERSONAL_TOKEN: ${{ secrets.PERSONAL_TOKEN }}
 
@@ -23,14 +22,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetching tags
-        run: git fetch --tags -f || true
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "24.14.0"
-          registry-url: "https://registry.npmjs.org"
           cache: "npm"
 
       - name: Install Dependencies
@@ -38,8 +33,28 @@ jobs:
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: true
 
+      # 🔥 Remove qualquer auth de npmrc (user/repo) pra não cair em token revogado
+      - name: Sanitize npm auth config
+        run: |
+          rm -f ~/.npmrc .npmrc || true
+          npm config delete //registry.npmjs.org/:_authToken || true
+          npm config delete always-auth || true
+          npm config set registry https://registry.npmjs.org/
+          echo "npm registry: $(npm config get registry)"
+          echo "npm token set? -> $(npm config get //registry.npmjs.org/:_authToken || true)"
+
+      # (opcional) Diagnóstico: mostra configs relevantes
+      - name: Debug npm config
+        run: |
+          npm config list -l | sed -n '1,200p'
+
+      # ✅ Publish via OIDC + provenance (sem token)
       - name: Publish to npm (OIDC)
         run: npm publish --access public --provenance
+        env:
+          # garante que nenhum token seja passado por acidente
+          NODE_AUTH_TOKEN: ""
+          NPM_TOKEN: ""
 
       - name: Generate Changelog
         id: generate_changelog
