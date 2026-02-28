@@ -45,7 +45,15 @@ export declare function msgFindAfter(
  */
 export declare function msgFindByDirection(
   params: MsgFindDirectionParams & { direction: 'before' | 'after' }
-): Promise<ModelPropertiesContructor<MsgModel>[]>;
+): Promise<
+  | ModelPropertiesContructor<MsgModel>[]
+  | {
+      messages: ModelPropertiesContructor<MsgModel>[];
+      docCount?: number;
+      linkCount?: number;
+      mediaCount?: number;
+    }
+>;
 
 exportModule(
   exports,
